@@ -25,11 +25,22 @@ cred = {
 };
 
 // Region, Endpoint
-AWS.config.region = 'YOUR REGION';
-tls_ep = new AWS.Endpoint('TRANSLATE ENDPOINT');
-iot_ep = 'AWS IoT ENDPOINT';
+AWS.config.region = 'REGION';
+tlsEp = new AWS.Endpoint('TRANSLATE_ENDPOINT');
+iotEp = 'IOT_ENDPOINT';
 ```
 
 
 # How to use
+Just open `chat-demo.html`.
 
+1. Input your name
+2. Select "Source Language"
+3. Select "Traget Language"
+4. Press "Start Chat" button
+
+When connecting to AWS IoT, you can start to use this chat.
+Any message you can input Message part and press "Send Message" button.
+
+After that at bottom of the page, you can see your messages and your receiving messages.
+Your sending message will not be translated but your receiving message sent from not you will be translated with your language setting.
