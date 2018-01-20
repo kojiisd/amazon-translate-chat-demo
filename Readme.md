@@ -30,6 +30,9 @@ tlsEp = new AWS.Endpoint('TRANSLATE_ENDPOINT');
 iotEp = 'IOT_ENDPOINT';
 ```
 
+## AWS IoT setting
+For sending and receiving data, this program is using AWS IoT service for WebSocket connection. You need to parpare AWS IoT conifguration.
+
 
 # How to use
 Just open `chat-demo.html`.
