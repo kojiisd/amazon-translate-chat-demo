@@ -1,27 +1,47 @@
-
-
 var body = {};
+var srcLang = "";
+var targetLang = "";
 
 const TOPIC = "translate_chat";
 
-
 $(document).ready(function () {
   $("#sendData").click(function () {
-    console.log('connect');
-    var name = $('#name').val();
     var message = $('#message').val();
 
-    if (name == "" || message == "") {
+    if (body.name == "" || message == "") {
       alert("Please fill each input boxes.");
       return;
     }
 
 
-    body.name = name;
     body.message = message;
     body.timestamp = new Date().toISOString();
 
     send(JSON.stringify(body));
+  });
+
+  $("#startChat").click(function () {
+    srcLang = $('[name=srcLang]').val();
+    targetLang = $('[name=targetLang]').val();
+
+    var name = $('#name').val();
+
+    if (name == "") {
+      alert("Please input name.");
+      return;
+    }
+
+    body.name = name;
+    $('#startArea>button').attr('disabled', 'true');
+    $('#buttonArea>button').removeAttr('disabled');
+
+    $('#startMessage').text("Starting...");
+
+    client.connect(connectOptions);
+    client.onMessageArrived = onMessage;
+    client.onConnectionLost = function (e) { console.log(e) };
+
+
   });
 });
 
@@ -32,12 +52,12 @@ cred = {
 };
 
 // Region, Endpoint
-AWS.config.region = 'YOUR REGION';
-tls_ep = new AWS.Endpoint('TRANSLATE ENDPOINT');
-iot_ep = 'AWS IoT ENDPOINT';
+AWS.config.region = 'REGION';
+tlsEp = new AWS.Endpoint('TRANSLATE_ENDPOINT');
+iotEp = 'IOT_ENDPOINT';
 
 AWS.config.credentials = new AWS.Credentials(cred.awsAccessKeyId, cred.awsSecretAccessKey);
-window.translator = new AWS.Translate({endpoint: tls_ep, region: AWS.config.region});
+window.translator = new AWS.Translate({endpoint: tlsEp, region: AWS.config.region});
 
 function SigV4Utils() { }
 
@@ -91,8 +111,8 @@ function createEndpoint(regionName, awsIotEndpoint, accessKey, secretKey) {
 }
 
 var endpoint = createEndpoint(
-  AWS.config.region, // Your Region
-  iot_ep, // Require 'lowercamelcase'!!
+  AWS.config.region,
+  iotEp, 
   cred.awsAccessKeyId,
   cred.awsSecretAccessKey);
 var clientId = Math.random().toString(36).substring(7);
@@ -104,10 +124,6 @@ var connectOptions = {
   onSuccess: subscribe
 };
 
-client.connect(connectOptions);
-client.onMessageArrived = onMessage;
-client.onConnectionLost = function (e) { console.log(e) };
-
 function send(content) {
   var message = new Paho.MQTT.Message(content);
   message.destinationName = TOPIC + "/" + content.name;
@@ -117,32 +133,48 @@ function send(content) {
 
 function subscribe() {
   client.subscribe(TOPIC + "/#");
+  $('#startMessage').text("Start Chat.");
   console.log("subscribed");
 }
 
 function onMessage(message) {
   var msgJson = JSON.parse(message.payloadString);
-  // document.getElementById("chatArea").innerHTML += "<li>" + msgJson.message + "</li>";
-  $("#chatArea").prepend("<li>" + msgJson.name + ": " + msgJson.message + "</li>");
-  translate(msgJson.message);
-  console.log("message: " + message.payloadString);
+  var addingHtml = "<tr><td>" + msgJson.name + ": </td><td>" + msgJson.message + "</td>";
+  if (msgJson.name == body.name) {
+    addingHtml += "<td></td><td></td></tr>"
+    $("#chatArea").prepend(addingHtml);
+  }
+  else {
+    translate(msgJson.message).then(function (result) {
+      addingHtml += "<td>" + msgJson.name + ": </td><td>" + result + "</td></tr>"
+      $("#chatArea").prepend(addingHtml);
+    }).catch(function(error){
+      alert(error);
+    });
+  }
+
 }
 
 function translate(message) {
 
   var params = {
     Text: message,
-    SourceLanguageCode: "en",
-    TargetLanguageCode: "zh"
+    SourceLanguageCode: srcLang,
+    TargetLanguageCode: targetLang
   };
-  
-  window.translator.translateText(params, function onIncomingMessageTranslate(err, data) {
-    if (err) {
-       console.log("Error calling Translate. " + err.message + err.stack);
-   }
-    if (data) {
-      console.log("M: " + message);
-      console.log("T: " + data.TranslatedText);
+
+  var syncProc = new Promise(
+    function (resolve, reject) {
+      window.translator.translateText(params, function onIncomingMessageTranslate(err, data) {
+        if (err) {
+          reject("Error calling Translate. " + err.message + err.stack);
+      }
+        if (data) {
+          resolve(data.TranslatedText);
+        }
+      });
     }
-});
+  );
+
+  return syncProc;
 }

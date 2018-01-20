@@ -17,7 +17,7 @@ See https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/building-s
 ## Account information input
 For access to AWS, input following parts
 
-``` js:script.js
+```js
 // Credential
 cred = {
   awsAccessKeyId: "ACCESS_KEY",
